@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      String   @default("operator")
+  
+  // Nambah relasi untuk simpan preferensi Layout / Grid
+  preferences UserPreference?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // JSON string format: { "gridSize": 4, "cellMap": { "0": "camId1", "1": "camId2" } }
+  liveLayout String?  
+}
+
+model Camera {
+  id          String   @id @default(uuid())
+  name        String
+  v380Id      String   @unique @map("id_v380")
+  ip          String
+  port        Int      @default(8800)
+  username    String
+  password    String
+  httpPort    Int      @default(8080)
+  rtspPort    Int      @default(8554)
+  hasOnvif    Boolean  @default(false)
+  status      String   @default("offline")
+  isRecording Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SystemConfig {
+  id             String   @id @default(uuid())
+  key            String   @unique
+  value          String
+  description    String?
+  updatedAt      DateTime @updatedAt
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  details   String?
+  module    String   @default("System")
+  level     String   @default("INFO")
+  ip        String?
+  createdAt DateTime @default(now())
+}

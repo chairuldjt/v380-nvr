@@ -1,0 +1,24 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+.env
+.env.local
+
+# Database
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# NVR Recordings & Binaries
+backend/recordings/*.mkv
+backend/recordings/*.mp4
+backend/bin/
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# OS
+.DS_Store
+Thumbs.db
