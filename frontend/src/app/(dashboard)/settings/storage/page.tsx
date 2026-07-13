@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { HardDrive, Save, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { HardDrive, Save, RefreshCw, CheckCircle, AlertCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,38 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getSystemConfig, updateSystemConfig } from '@/lib/api';
+
+const TIMEZONE_OPTIONS = [
+  // Indonesia
+  { value: 'Asia/Jakarta', label: 'Asia/Jakarta (WIB, UTC+7)' },
+  { value: 'Asia/Makassar', label: 'Asia/Makassar (WITA, UTC+8)' },
+  { value: 'Asia/Jayapura', label: 'Asia/Jayapura (WIT, UTC+9)' },
+  // Asia Lainnya
+  { value: 'Asia/Singapore', label: 'Asia/Singapore (SGT, UTC+8)' },
+  { value: 'Asia/Bangkok', label: 'Asia/Bangkok (ICT, UTC+7)' },
+  { value: 'Asia/Ho_Chi_Minh', label: 'Asia/Ho Chi Minh (ICT, UTC+7)' },
+  { value: 'Asia/Manila', label: 'Asia/Manila (PHT, UTC+8)' },
+  { value: 'Asia/Shanghai', label: 'Asia/Shanghai (CST, UTC+8)' },
+  { value: 'Asia/Tokyo', label: 'Asia/Tokyo (JST, UTC+9)' },
+  { value: 'Asia/Seoul', label: 'Asia/Seoul (KST, UTC+9)' },
+  { value: 'Asia/Kolkata', label: 'Asia/Kolkata (IST, UTC+5:30)' },
+  { value: 'Asia/Dubai', label: 'Asia/Dubai (GST, UTC+4)' },
+  // Australia
+  { value: 'Australia/Sydney', label: 'Australia/Sydney (AEST, UTC+10)' },
+  { value: 'Australia/Perth', label: 'Australia/Perth (AWST, UTC+8)' },
+  // Eropa
+  { value: 'Europe/London', label: 'Europe/London (GMT, UTC+0)' },
+  { value: 'Europe/Berlin', label: 'Europe/Berlin (CET, UTC+1)' },
+  { value: 'Europe/Moscow', label: 'Europe/Moscow (MSK, UTC+3)' },
+  // Amerika
+  { value: 'America/New_York', label: 'America/New York (EST, UTC-5)' },
+  { value: 'America/Chicago', label: 'America/Chicago (CST, UTC-6)' },
+  { value: 'America/Los_Angeles', label: 'America/Los Angeles (PST, UTC-8)' },
+  // Universal
+  { value: 'UTC', label: 'UTC (UTC+0)' },
+];
 
 export default function StorageSettingsPage() {
   const [loading, setLoading] = React.useState(true);
@@ -19,6 +50,7 @@ export default function StorageSettingsPage() {
   const [retentionDays, setRetentionDays] = React.useState<number>(7);
   const [maxStorageGB, setMaxStorageGB] = React.useState<number>(500);
   const [autoDelete, setAutoDelete] = React.useState<boolean>(true);
+  const [timezone, setTimezone] = React.useState<string>('Asia/Jakarta');
 
   const loadConfigs = React.useCallback(async () => {
     setLoading(true);
@@ -28,6 +60,7 @@ export default function StorageSettingsPage() {
       if (data.retentionDays !== undefined) setRetentionDays(Number(data.retentionDays));
       if (data.maxStorageGB !== undefined) setMaxStorageGB(Number(data.maxStorageGB));
       if (data.autoDelete !== undefined) setAutoDelete(data.autoDelete === true || data.autoDelete === 'true');
+      if (data.timezone) setTimezone(data.timezone);
     } catch (err) {
       console.error(err);
       setStatusMsg({ type: 'error', text: 'Failed to load storage configurations from server.' });
@@ -47,7 +80,8 @@ export default function StorageSettingsPage() {
       await updateSystemConfig({
         retentionDays,
         maxStorageGB,
-        autoDelete
+        autoDelete,
+        timezone
       });
       setStatusMsg({ type: 'success', text: 'Storage settings have been updated successfully.' });
     } catch (err) {
@@ -184,6 +218,53 @@ export default function StorageSettingsPage() {
                   <Label htmlFor="auto-delete" className="text-sm font-semibold cursor-pointer">
                     {autoDelete ? 'Enabled (Automatic Purge)' : 'Disabled (Manual Purge Only)'}
                   </Label>
+                </div>
+              </div>
+
+              {/* Recording Timezone */}
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-primary" />
+                      Recording Timezone
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5 max-w-md">
+                      Timezone used for recording filenames and playback date filtering.
+                      Set this to match your local timezone so playback dates are correct.
+                    </p>
+                  </div>
+                  <Select value={timezone} onValueChange={(val) => { if (val) setTimezone(val); }}>
+                    <SelectTrigger className="w-full sm:w-72">
+                      <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Indonesia</SelectLabel>
+                        {TIMEZONE_OPTIONS.filter(tz => tz.value.startsWith('Asia/Jakarta') || tz.value.startsWith('Asia/Makassar') || tz.value.startsWith('Asia/Jayapura')).map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Asia Lainnya</SelectLabel>
+                        {TIMEZONE_OPTIONS.filter(tz => tz.value.startsWith('Asia/') && !['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura'].includes(tz.value)).map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Lainnya</SelectLabel>
+                        {TIMEZONE_OPTIONS.filter(tz => !tz.value.startsWith('Asia/')).map((tz) => (
+                          <SelectItem key={tz.value} value={tz.value}>
+                            {tz.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </>

@@ -7,7 +7,8 @@ const prisma = new PrismaClient();
 const defaultConfigs = [
   { key: 'retentionDays', value: '7', description: 'Number of days to keep recordings' },
   { key: 'autoDelete', value: 'true', description: 'Automatically delete oldest recordings when full or expired' },
-  { key: 'maxStorageGB', value: '500', description: 'Maximum storage limit for recordings in GB' }
+  { key: 'maxStorageGB', value: '500', description: 'Maximum storage limit for recordings in GB' },
+  { key: 'timezone', value: 'Asia/Jakarta', description: 'Timezone for recording filenames (IANA format)' }
 ];
 
 export const getSystemConfig = async (req: Request, res: Response) => {

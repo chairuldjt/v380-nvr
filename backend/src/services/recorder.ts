@@ -9,9 +9,62 @@ const prisma = new PrismaClient();
 // jadi naik 2 level ke root backend/ lalu masuk ke recordings/
 // Ini KONSISTEN di dev maupun prod, tidak tergantung dari mana process dijalankan.
 const RECORDINGS_DIR = path.join(__dirname, '..', '..', 'recordings');
+const DEFAULT_TIMEZONE = 'Asia/Jakarta';
 
 if (!fs.existsSync(RECORDINGS_DIR)) {
   fs.mkdirSync(RECORDINGS_DIR, { recursive: true });
+}
+
+/**
+ * Ambil timezone dari SystemConfig DB. Fallback ke Asia/Jakarta jika tidak ada atau invalid.
+ */
+async function getConfiguredTimezone(): Promise<string> {
+  try {
+    const record = await prisma.systemConfig.findUnique({
+      where: { key: 'timezone' },
+    });
+    const tz = record?.value || DEFAULT_TIMEZONE;
+
+    // Validasi: jika timezone invalid, Intl.DateTimeFormat akan throw RangeError
+    Intl.DateTimeFormat('en-US', { timeZone: tz });
+    return tz;
+  } catch {
+    console.warn(`[REC] Invalid or unavailable timezone setting, falling back to ${DEFAULT_TIMEZONE}`);
+    return DEFAULT_TIMEZONE;
+  }
+}
+
+/**
+ * Extract date/time parts dari Date object menggunakan timezone tertentu.
+ * Mengembalikan string yang sudah zero-padded.
+ */
+function getDatePartsInTimezone(date: Date, timezone: string) {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(date);
+  const get = (type: string) => parts.find(p => p.type === type)?.value ?? '00';
+
+  let hour = get('hour');
+  // Beberapa engine mengembalikan '24' untuk midnight, normalkan ke '00'
+  if (hour === '24') hour = '00';
+
+  return {
+    year: get('year'),
+    month: get('month'),
+    day: get('day'),
+    hour,
+    minute: get('minute'),
+    second: get('second'),
+  };
 }
 
 interface RecorderInstance {
@@ -37,21 +90,11 @@ class RecordingService {
     }, 10000);
   }
 
-  private generateFilename(v380Id: string) {
-    // Selalu gunakan timezone Asia/Jakarta (WIB) agar nama file konsisten
-    // di server manapun (UTC, WIB, dll) dan cocok dengan filter tanggal di browser user.
+  private async generateFilename(v380Id: string) {
+    const timezone = await getConfiguredTimezone();
     const now = new Date();
-    // Hitung offset WIB (UTC+7) secara manual — tidak tergantung timezone OS
-    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-    const wib = new Date(utcMs + 7 * 3600000);
-
-    const YYYY = wib.getFullYear();
-    const MM = String(wib.getMonth() + 1).padStart(2, '0');
-    const DD = String(wib.getDate()).padStart(2, '0');
-    const HH = String(wib.getHours()).padStart(2, '0');
-    const MIN = String(wib.getMinutes()).padStart(2, '0');
-    const SS = String(wib.getSeconds()).padStart(2, '0');
-    return path.join(RECORDINGS_DIR, `${v380Id}_${YYYY}${MM}${DD}_${HH}${MIN}${SS}.mkv`);
+    const { year, month, day, hour, minute, second } = getDatePartsInTimezone(now, timezone);
+    return path.join(RECORDINGS_DIR, `${v380Id}_${year}${month}${day}_${hour}${minute}${second}.mkv`);
   }
 
   private pendingStarts: Set<string> = new Set();
@@ -96,7 +139,7 @@ class RecordingService {
        return;
     }
 
-    const outputPath = this.generateFilename(v380Id);
+    const outputPath = await this.generateFilename(v380Id);
     
     const args = [
       '-fflags', '+genpts+nobuffer', // Jangan ditahan di memori, langsung proses & perbaiki timestamp
