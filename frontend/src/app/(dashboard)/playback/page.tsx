@@ -29,7 +29,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 
-import { fetchCameras, fetchRecordings } from '@/lib/api';
+import { fetchCameras, fetchRecordings, getApiUrl } from '@/lib/api';
 
 interface Camera {
   id: string;
@@ -341,7 +341,7 @@ export default function PlaybackPage() {
           {selectedRecording ? (
             <video
               ref={videoRef}
-              src={selectedRecording ? `${process.env.NEXT_PUBLIC_API_URL || '/api'}/recordings/stream/${selectedRecording}` : undefined}
+              src={selectedRecording ? `${getApiUrl()}/recordings/stream/${selectedRecording}` : undefined}
               autoPlay={true}
               onPlay={syncPlayState}
               onPause={syncPlayState}
@@ -424,8 +424,7 @@ export default function PlaybackPage() {
                 className="shrink-0"
                 onClick={() => {
                   if (selectedRecording) {
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-                    window.open(`${apiUrl}/recordings/stream/${selectedRecording}`, '_blank');
+                    window.open(`${getApiUrl()}/recordings/stream/${selectedRecording}`, '_blank');
                   }
                 }}
               >

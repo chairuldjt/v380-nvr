@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Video } from "lucide-react"
+import { loginUser } from "@/lib/api"
 
 export function LoginForm({
   className,
@@ -28,20 +29,7 @@ export function LoginForm({
     setIsLoading(true)
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      })
-
-      if (!res.ok) {
-        throw new Error('Invalid credentials')
-      }
-
-      const data = await res.json()
+      const data = await loginUser({ username, password })
 
       if (data.token) {
         localStorage.setItem('nvr_token', data.token)

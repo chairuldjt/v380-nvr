@@ -47,6 +47,22 @@ const handleResponse = async (res: Response) => {
   return res.json();
 };
 
+export const loginUser = async (credentials: any) => {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(credentials),
+  });
+
+  if (!res.ok) {
+    throw new Error('Invalid credentials');
+  }
+
+  return res.json();
+};
+
 export const fetchCameras = async () => {
   const res = await fetch(`${API_URL}/cameras`, {
     headers: getHeaders(),

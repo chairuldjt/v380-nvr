@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Video, RefreshCw, Camera as CameraIcon, AlertCircle, Play, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { startCameraDecoder } from '@/lib/api';
 
 interface CameraData {
   id: string;
@@ -53,16 +54,7 @@ export default function LivePlayer({ camera, backendHost = 'localhost' }: LivePl
     if (!camera.v380Id) return;
     setIsStarting(true);
     try {
-      const token = localStorage.getItem('nvr_token');
-      // Gunakan origin atau API url untuk endpoint
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-      await fetch(`${apiUrl}/cameras/${camera.v380Id}/start`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await startCameraDecoder(camera.v380Id);
       setTimeout(() => {
         setIsStarting(false);
         setStreamError(false);
