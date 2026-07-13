@@ -22,7 +22,8 @@ cd ..
 
 echo "[3/3] Menjalankan layanan dengan PM2..."
 # Hentikan dan hapus instance lama jika ada
-pm2 delete ecosystem.config.js 2>/dev/null || true
+pm2 delete v380-nvr-backend 2>/dev/null || true
+pm2 delete v380-nvr-frontend 2>/dev/null || true
 
 # Jalankan dengan ecosystem.config.js
 pm2 start ecosystem.config.js
