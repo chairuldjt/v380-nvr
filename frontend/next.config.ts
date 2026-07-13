@@ -8,9 +8,8 @@ const nextConfig: NextConfig = {
         destination: 'http://localhost:4000/api/:path*', // Proxy to backend
       },
       {
-        source: '/stream/:port/:path*',
-        // Menggunakan sintaks regex parameter next.config agar tidak mengalami konflik titik dua (::) saat di-build
-        destination: 'http://localhost/:path*?__stream_port=:port', // Akan di-override/ditangani dengan rapi, namun cara terbaik di bawah:
+        source: '/stream/:path*',
+        destination: 'http://localhost:4000/stream/:path*', // Proxy stream to backend
       },
     ];
   },
