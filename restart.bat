@@ -23,11 +23,11 @@ cd frontend
 :: Jalankan frontend di background
 start "V380 Frontend App" cmd /c "npm run dev"
 cd ..
-echo   - Frontend App berjalan di jendela baru (Port 3000).
+echo   - Frontend App berjalan di jendela baru (Port 5050).
 echo.
 
 echo ==========================================
 echo SEMUA SERVICE BERHASIL DI-RESTART!
-echo Silakan akses http://localhost:3000
+echo Silakan akses http://localhost:5050
 echo ==========================================
 pause

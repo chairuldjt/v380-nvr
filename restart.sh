@@ -25,11 +25,11 @@ cd frontend
 npm run dev > frontend.log 2>&1 &
 FRONTEND_PID=$!
 cd ..
-echo "  - Frontend App berjalan di background (PID: $FRONTEND_PID, Port 3000)."
+echo "  - Frontend App berjalan di background (PID: $FRONTEND_PID, Port 5050)."
 echo ""
 
 echo "=========================================="
 echo "SEMUA SERVICE BERHASIL DI-RESTART!"
-echo "Silakan akses http://localhost:3000"
+echo "Silakan akses http://localhost:5050"
 echo "Untuk menghentikan jalankan command: pkill -f node"
 echo "=========================================="

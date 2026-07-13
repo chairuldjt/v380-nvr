@@ -63,7 +63,7 @@ An open-source, highly efficient Network Video Recorder (NVR) built specifically
    ./restart.sh
    ```
 
-   The web interface will be accessible at `http://localhost:3000`.
+   The web interface will be accessible at `http://localhost:5050`.
 
 5. **Production Deployment (Linux with PM2)**
    It is highly recommended to run the NVR using PM2 in a production environment to ensure processes automatically restart if they crash.
@@ -86,7 +86,7 @@ The application is fully optimized to be exposed securely to the internet via **
 
 1. Create a Tunnel in your Cloudflare Zero Trust Dashboard.
 2. Add a single **Public Hostname** (e.g., `nvr.yourdomain.com`).
-3. Set the Service Type to `HTTP` and URL to `localhost:3000`.
+3. Set the Service Type to `HTTP` and URL to `localhost:5050`.
 
 *Note: The frontend is pre-configured with a reverse proxy (`next.config.ts`) that automatically routes API requests (`/api/*`) and Video Playback Streams internally to the backend server (port 4000). You do not need to expose port 4000 to the public internet.*
 

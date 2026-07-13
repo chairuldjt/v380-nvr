@@ -23,7 +23,7 @@ module.exports = {
       args: "start",
       env: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 5050,
       },
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
       error_file: "../logs/frontend-error.log",
