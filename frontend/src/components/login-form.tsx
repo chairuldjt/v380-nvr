@@ -28,7 +28,7 @@ export function LoginForm({
     setIsLoading(true)
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
