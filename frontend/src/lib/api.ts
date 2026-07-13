@@ -1,4 +1,23 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+// Helper to get API URL dynamically based on current browser host
+export const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  // If running in browser, dynamically use current host with port 4000
+  if (typeof window !== 'undefined') {
+    const { protocol, hostname } = window.location;
+    // For cloudflare tunnel or other reverse proxy configurations,
+    // it's highly recommended to use NEXT_PUBLIC_API_URL instead.
+    // If not set, we assume backend is accessible at port 4000 on the same host.
+    return `${protocol}//${hostname}:4000/api`;
+  }
+
+  // Fallback for SSR
+  return 'http://localhost:4000/api';
+};
+
+const API_URL = getApiUrl();
 
 const getHeaders = () => {
   const headers: Record<string, string> = {
