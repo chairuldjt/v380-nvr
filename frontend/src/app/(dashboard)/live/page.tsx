@@ -38,8 +38,20 @@ export default function LiveViewPage() {
   const [gridSize, setGridSize] = React.useState<GridSize>(4);
   const [selectedCell, setSelectedCell] = React.useState<number | null>(0);
   const [isPanelOpen, setIsPanelOpen] = React.useState(true);
-  const [isLocked, setIsLocked] = React.useState(true); // Default to locked to prevent accidental drags
+  const [isLocked, setIsLocked] = React.useState(() => {
+    // Baca state lock dari localStorage agar tidak reset saat refresh
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('nvr_live_locked');
+      if (saved !== null) return saved === 'true';
+    }
+    return true; // Default to locked to prevent accidental drags
+  });
   const [cellMap, setCellMap] = React.useState<Record<number, string>>({});
+
+  // Simpan state lock ke localStorage setiap berubah
+  React.useEffect(() => {
+    localStorage.setItem('nvr_live_locked', String(isLocked));
+  }, [isLocked]);
 
   
   
