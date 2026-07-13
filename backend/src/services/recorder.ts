@@ -45,10 +45,25 @@ class RecordingService {
     return path.join(RECORDINGS_DIR, `${v380Id}_${YYYY}${MM}${DD}_${HH}${MIN}${SS}.mkv`);
   }
 
+  private pendingStarts: Set<string> = new Set();
+
   public async startRecording(v380Id: string) {
-    if (this.instances.has(v380Id)) {
+    if (this.instances.has(v380Id) || this.pendingStarts.has(v380Id)) {
       return;
     }
+
+    this.pendingStarts.add(v380Id);
+
+    // Beri jeda 5 detik untuk memastikan port RTSP di decoder benar-benar sudah listening & mengalirkan frame video
+    setTimeout(async () => {
+      this.pendingStarts.delete(v380Id);
+      if (this.instances.has(v380Id)) return;
+
+      await this.executeStartRecording(v380Id);
+    }, 5000);
+  }
+
+  private async executeStartRecording(v380Id: string) {
 
     const camera = await prisma.camera.findUnique({ where: { v380Id } });
     if (!camera) return;
