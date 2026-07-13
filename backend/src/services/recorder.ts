@@ -5,7 +5,10 @@ import { PrismaClient } from '@prisma/client';
 import { decoderService } from './v380-wrapper';
 
 const prisma = new PrismaClient();
-const RECORDINGS_DIR = path.join(process.cwd(), 'recordings');
+// __dirname selalu relatif terhadap lokasi file ini (services/),
+// jadi naik 2 level ke root backend/ lalu masuk ke recordings/
+// Ini KONSISTEN di dev maupun prod, tidak tergantung dari mana process dijalankan.
+const RECORDINGS_DIR = path.join(__dirname, '..', '..', 'recordings');
 
 if (!fs.existsSync(RECORDINGS_DIR)) {
   fs.mkdirSync(RECORDINGS_DIR, { recursive: true });

@@ -23,7 +23,9 @@ import path from 'path';
 const router = Router();
 
 // Serve static recordings directly
-router.use('/recordings/stream', express.static(path.join(process.cwd(), 'recordings')));
+// __dirname selalu relatif terhadap lokasi file ini (routes/),
+// jadi naik 2 level ke root backend/ lalu masuk ke recordings/
+router.use('/recordings/stream', express.static(path.join(__dirname, '..', '..', 'recordings')));
 
 // Playback endpoints
 router.get('/recordings', getRecordings);

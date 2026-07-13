@@ -14,9 +14,10 @@ interface DecoderInstance {
 class V380DecoderService {
   private instances: Map<string, DecoderInstance> = new Map();
   // Resolve binary path based on platform
+  // Gunakan __dirname (relatif terhadap file ini di services/) agar konsisten di dev & prod
   private readonly binaryPath = process.platform === 'win32'
-    ? path.join(process.cwd(), 'bin', 'V380Decoder-win.exe')
-    : path.join(process.cwd(), 'bin', 'V380Decoder-linux');
+    ? path.join(__dirname, '..', '..', 'bin', 'V380Decoder-win.exe')
+    : path.join(__dirname, '..', '..', 'bin', 'V380Decoder-linux');
 
   constructor() {
     this.init();

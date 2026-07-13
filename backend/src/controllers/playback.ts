@@ -2,7 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import { Request, Response } from 'express';
 
-const RECORDINGS_DIR = path.join(process.cwd(), 'recordings');
+// __dirname selalu relatif terhadap lokasi file ini (controllers/),
+// jadi naik 2 level ke root backend/ lalu masuk ke recordings/
+// Ini KONSISTEN di dev maupun prod, tidak tergantung dari mana process dijalankan.
+const RECORDINGS_DIR = path.join(__dirname, '..', '..', 'recordings');
 
 // Endpoint to list recording files
 export const getRecordings = (req: Request, res: Response) => {
