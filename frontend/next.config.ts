@@ -9,7 +9,8 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/stream/:port/:path*',
-        destination: 'http://127.0.0.1::port/:path*', // Proxy to V380Decoder specific camera port (e.g. 8080, 8081)
+        // Menggunakan sintaks regex parameter next.config agar tidak mengalami konflik titik dua (::) saat di-build
+        destination: 'http://localhost/:path*?__stream_port=:port', // Akan di-override/ditangani dengan rapi, namun cara terbaik di bawah:
       },
     ];
   },

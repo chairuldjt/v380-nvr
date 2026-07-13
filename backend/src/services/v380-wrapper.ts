@@ -73,7 +73,17 @@ class V380DecoderService {
       }
 
       // Note: We use a placeholder logic here. If the binary does not exist, it will fail gracefully.
-      const decoderProcess = spawn(this.binaryPath, args, { stdio: 'pipe' });
+      // Ensure we run the binary from its own directory so it can find its .so/.dll libraries
+      const binDir = path.dirname(this.binaryPath);
+      const decoderProcess = spawn(this.binaryPath, args, {
+        stdio: 'pipe',
+        cwd: binDir, // Set working directory to bin/ so it finds H264SharpNative
+        env: {
+          ...process.env,
+          // Add binDir to LD_LIBRARY_PATH for Linux to find .so files
+          LD_LIBRARY_PATH: `${binDir}:${process.env.LD_LIBRARY_PATH || ''}`
+        }
+      });
 
       this.instances.set(v380Id, {
         process: decoderProcess,

@@ -50,7 +50,7 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const updateUser = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { username, password, role } = req.body;
 
     const updateData: any = { username, role };
@@ -73,7 +73,7 @@ export const updateUser = async (req: Request, res: Response) => {
 
 export const deleteUser = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     // Prevent deleting the last admin
     const adminCount = await prisma.user.count({ where: { role: 'admin' } });
