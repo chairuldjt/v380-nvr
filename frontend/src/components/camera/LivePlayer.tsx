@@ -34,9 +34,10 @@ export default function LivePlayer({ camera, backendHost = 'localhost' }: LivePl
     return 'localhost';
   }, [backendHost]);
 
-  // Endpoint MJPEG bawaan V380Decoder v1.0.3
-  const streamUrl = `http://${resolvedHost}:${camera.httpPort}/mjpeg?t=${streamKey}`;
-  const snapshotUrl = `http://${resolvedHost}:${camera.httpPort}/snapshot`;
+  // Endpoint MJPEG diproxy via Next.js agar menghindari Mixed Content Error di HTTPS (Cloudflare Tunnel)
+  // Proxy di next.config.ts akan merouting `/stream/:port/*` ke `http://127.0.0.1::port/*`
+  const streamUrl = `/stream/${camera.httpPort}/mjpeg?t=${streamKey}`;
+  const snapshotUrl = `/stream/${camera.httpPort}/snapshot`;
 
   const handleRefresh = (e: React.MouseEvent) => {
     e.stopPropagation();
