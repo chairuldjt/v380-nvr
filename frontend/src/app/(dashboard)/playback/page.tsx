@@ -183,8 +183,8 @@ export default function PlaybackPage() {
     }
   };
 
-  const handleSliderSeek = (val: number | number[]) => {
-    const targetSeconds = Array.isArray(val) ? val[0] : val;
+  const handleSliderSeek = (val: number | readonly number[]) => {
+    const targetSeconds = Array.isArray(val) || typeof val !== 'number' ? (val as readonly number[])[0] : val;
     setTimeProgress(targetSeconds);
 
     // If seeking inside current clip duration

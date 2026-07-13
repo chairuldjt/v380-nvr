@@ -147,7 +147,7 @@ export default function UsersPage() {
         <Label htmlFor="role" className="text-right">Role</Label>
         <Select
           value={formData.role}
-          onValueChange={(val) => setFormData({ ...formData, role: val })}
+          onValueChange={(val) => setFormData({ ...formData, role: val || 'operator' })}
         >
           <SelectTrigger className="col-span-3">
             <SelectValue placeholder="Select a role" />
