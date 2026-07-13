@@ -127,7 +127,7 @@ export default function PlaybackPage() {
     }
   }, [selectedCamera, handleSearch]);
 
-  // When selected recording changes, update base time and reset playback state
+  // When selected recording changes, update base time
   React.useEffect(() => {
     if (selectedRecording) {
       const startTime = getStartTimeSecondsFromFilename(selectedRecording);
@@ -135,19 +135,27 @@ export default function PlaybackPage() {
         setBaseClipStartTime(startTime);
         setTimeProgress(startTime);
       }
-      setIsPlaying(true);
-    } else {
-      setIsPlaying(false);
+      setIsPlaying(true); // asumsikan kita ingin autoplay
     }
   }, [selectedRecording]);
 
-  // Handle video play / pause commands
+  // Use this to sync the UI whenever video actually plays/pauses
+  const syncPlayState = () => {
+     if (videoRef.current) {
+        setIsPlaying(!videoRef.current.paused);
+     }
+  };
+
+  // Handle video play / pause commands using REAL DOM state
   const togglePlay = () => {
     if (!videoRef.current) return;
-    if (isPlaying) {
-      videoRef.current.pause();
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch((err) => {
+         console.error("Autoplay/Play blocked by browser:", err);
+         setIsPlaying(false);
+      });
     } else {
-      videoRef.current.play().catch(console.error);
+      videoRef.current.pause();
     }
   };
 
@@ -334,9 +342,14 @@ export default function PlaybackPage() {
             <video
               ref={videoRef}
               src={`http://localhost:4000/api/recordings/stream/${selectedRecording}`}
-              autoPlay={isPlaying}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
+              autoPlay={true}
+              onPlay={syncPlayState}
+              onPause={syncPlayState}
+              onLoadedMetadata={() => {
+                if (videoRef.current) {
+                   videoRef.current.play().catch(() => setIsPlaying(false));
+                }
+              }}
               onTimeUpdate={handleTimeUpdate}
               className="w-full h-full object-contain"
             />

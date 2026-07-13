@@ -269,6 +269,7 @@ export default function LiveViewPage() {
               size="icon"
               className="h-7 w-7"
               onClick={() => handleGridChange(1)}
+              disabled={isLocked}
             >
               <Square className="h-4 w-4" />
             </Button>
@@ -278,6 +279,7 @@ export default function LiveViewPage() {
               className="h-7 w-7"
               onClick={() => handleGridChange(2)}
               title="2 Cameras (Split)"
+              disabled={isLocked}
             >
               <div className="flex flex-col gap-0.5 w-4 h-4">
                 <div className="bg-current rounded-[1px] flex-1" />
@@ -289,6 +291,7 @@ export default function LiveViewPage() {
               size="icon"
               className="h-7 w-7"
               onClick={() => handleGridChange(4)}
+              disabled={isLocked}
             >
               <Grid2X2 className="h-4 w-4" />
             </Button>
@@ -297,6 +300,7 @@ export default function LiveViewPage() {
               size="icon"
               className="h-7 w-7"
               onClick={() => handleGridChange(9)}
+              disabled={isLocked}
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
@@ -305,6 +309,7 @@ export default function LiveViewPage() {
               size="icon"
               className="h-7 w-7"
               onClick={() => handleGridChange(16)}
+              disabled={isLocked}
             >
               <div className="grid grid-cols-4 gap-0.5 w-4 h-4">
                 {Array.from({length: 16}).map((_, i) => (
