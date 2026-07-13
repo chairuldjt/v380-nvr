@@ -80,6 +80,16 @@ An open-source, highly efficient Network Video Recorder (NVR) built specifically
    pm2 restart all        # Restart all services
    ```
 
+## ☁️ Cloudflare Tunnel Deployment
+
+The application is fully optimized to be exposed securely to the internet via **Cloudflare Tunnel (cloudflared)** using a single domain/hostname without the need for manual port forwarding on your router.
+
+1. Create a Tunnel in your Cloudflare Zero Trust Dashboard.
+2. Add a single **Public Hostname** (e.g., `nvr.yourdomain.com`).
+3. Set the Service Type to `HTTP` and URL to `localhost:3000`.
+
+*Note: The frontend is pre-configured with a reverse proxy (`next.config.ts`) that automatically routes API requests (`/api/*`) and Video Playback Streams internally to the backend server (port 4000). You do not need to expose port 4000 to the public internet.*
+
 ## ⚙️ Configuration
 
 - **Default Login:**
