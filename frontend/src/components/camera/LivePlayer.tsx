@@ -55,7 +55,7 @@ export default function LivePlayer({ camera, backendHost = 'localhost' }: LivePl
     try {
       const token = localStorage.getItem('nvr_token');
       // Gunakan origin atau API url untuk endpoint
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || `http://${resolvedHost}:4000/api`;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
       await fetch(`${apiUrl}/cameras/${camera.v380Id}/start`, {
         method: 'POST',

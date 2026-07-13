@@ -341,7 +341,7 @@ export default function PlaybackPage() {
           {selectedRecording ? (
             <video
               ref={videoRef}
-              src={selectedRecording ? `${process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:4000/api` : 'http://localhost:4000/api')}/recordings/stream/${selectedRecording}` : undefined}
+              src={selectedRecording ? `${process.env.NEXT_PUBLIC_API_URL || '/api'}/recordings/stream/${selectedRecording}` : undefined}
               autoPlay={true}
               onPlay={syncPlayState}
               onPause={syncPlayState}
@@ -424,7 +424,7 @@ export default function PlaybackPage() {
                 className="shrink-0"
                 onClick={() => {
                   if (selectedRecording) {
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:4000/api` : 'http://localhost:4000/api');
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
                     window.open(`${apiUrl}/recordings/stream/${selectedRecording}`, '_blank');
                   }
                 }}
