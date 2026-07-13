@@ -61,7 +61,17 @@ class V380DecoderService {
                 args.push('--enable-onvif');
             }
             // Note: We use a placeholder logic here. If the binary does not exist, it will fail gracefully.
-            const decoderProcess = (0, child_process_1.spawn)(this.binaryPath, args, { stdio: 'pipe' });
+            // Ensure we run the binary from its own directory so it can find its .so/.dll libraries
+            const binDir = path_1.default.dirname(this.binaryPath);
+            const decoderProcess = (0, child_process_1.spawn)(this.binaryPath, args, {
+                stdio: 'pipe',
+                cwd: binDir, // Set working directory to bin/ so it finds H264SharpNative
+                env: {
+                    ...process.env,
+                    // Add binDir to LD_LIBRARY_PATH for Linux to find .so files
+                    LD_LIBRARY_PATH: `${binDir}:${process.env.LD_LIBRARY_PATH || ''}`
+                }
+            });
             this.instances.set(v380Id, {
                 process: decoderProcess,
                 v380Id,
@@ -79,7 +89,7 @@ class V380DecoderService {
                         await this.logEvent('V380Decoder', 'INFO', `Camera ${camera.name} stream is now ONLINE`);
                         // Start recording automatically if enabled
                         if (camera.isRecording) {
-                            recorder_1.recorderService.startRecording(v380Id, camera.rtspPort);
+                            recorder_1.recorderService.startRecording(v380Id);
                         }
                     }
                 }
@@ -100,7 +110,7 @@ class V380DecoderService {
                         await this.logEvent('V380Decoder', 'INFO', `Camera ${camera.name} stream is now ONLINE`);
                         // Start recording automatically if enabled
                         if (camera.isRecording) {
-                            recorder_1.recorderService.startRecording(v380Id, camera.rtspPort);
+                            recorder_1.recorderService.startRecording(v380Id);
                         }
                     }
                 }

@@ -7,28 +7,20 @@ const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const prisma = new client_1.PrismaClient();
 const INITIAL_CAMERAS = [
-    {
-        name: 'Camera 1',
-        v380Id: '96555529',
-        ip: '10.10.10.21',
-        port: 8800,
-        username: '96555529',
-        password: 'Nuger.27102022',
-        httpPort: 8080,
-        rtspPort: 8554,
-        hasOnvif: true,
-    },
-    {
-        name: 'Camera 2',
-        v380Id: '80842115',
-        ip: '10.10.10.23',
-        port: 8800,
-        username: '80842115',
-        password: 'Nuger.27102022',
-        httpPort: 8081,
-        rtspPort: 8555,
-        hasOnvif: false,
-    },
+// Example dummy camera (Remove or edit this before production)
+/*
+{
+  name: 'Front Yard',
+  v380Id: '12345678',
+  ip: '192.168.1.100',
+  port: 8800,
+  username: 'admin',
+  password: 'password123',
+  httpPort: 8080,
+  rtspPort: 8554,
+  hasOnvif: true,
+}
+*/
 ];
 async function main() {
     console.log('Seeding database...');

@@ -21,12 +21,13 @@ class RecordingService {
     }
     async init() {
         console.log('RecordingService initializing...');
+        // Beri waktu 10 detik agar V380Decoder selesai login & RTSP Server lokal siap
         setTimeout(async () => {
             const cameras = await prisma.camera.findMany({ where: { isRecording: true } });
             for (const camera of cameras) {
                 this.startRecording(camera.v380Id);
             }
-        }, 2000);
+        }, 10000);
     }
     generateFilename(v380Id) {
         const d = new Date();
@@ -38,10 +39,21 @@ class RecordingService {
         const SS = String(d.getSeconds()).padStart(2, '0');
         return path_1.default.join(RECORDINGS_DIR, `${v380Id}_${YYYY}${MM}${DD}_${HH}${MIN}${SS}.mkv`);
     }
+    pendingStarts = new Set();
     async startRecording(v380Id) {
-        if (this.instances.has(v380Id)) {
+        if (this.instances.has(v380Id) || this.pendingStarts.has(v380Id)) {
             return;
         }
+        this.pendingStarts.add(v380Id);
+        // Beri jeda 5 detik untuk memastikan port RTSP di decoder benar-benar sudah listening & mengalirkan frame video
+        setTimeout(async () => {
+            this.pendingStarts.delete(v380Id);
+            if (this.instances.has(v380Id))
+                return;
+            await this.executeStartRecording(v380Id);
+        }, 5000);
+    }
+    async executeStartRecording(v380Id) {
         const camera = await prisma.camera.findUnique({ where: { v380Id } });
         if (!camera)
             return;
@@ -65,7 +77,9 @@ class RecordingService {
         }
         const outputPath = this.generateFilename(v380Id);
         const args = [
+            '-fflags', '+genpts+nobuffer', // Jangan ditahan di memori, langsung proses & perbaiki timestamp
             '-rtsp_transport', 'tcp',
+            '-timeout', '10000000', // 10 detik socket timeout (microsecond) agar tidak hang selamanya
             '-i', rtspUrl,
             '-t', '900',
             '-c:v', 'copy',
@@ -80,12 +94,19 @@ class RecordingService {
             // Local Decoder stream (Audio: pcm_alaw) - ini sudah terbukti Anda bilang OKE!
             args.push('-c:a', 'aac', '-b:a', '32k', '-ar', '8000', '-ac', '1');
         }
-        args.push('-f', 'matroska', '-y', outputPath);
+        args.push('-flush_packets', '1', // Langsung tulis tiap packet ke disk (jangan ditahan di RAM)
+        '-f', 'matroska', '-y', outputPath);
         console.log(`[REC] Spawning 15-Min Chunk: ffmpeg -i <RTSP> -> ${path_1.default.basename(outputPath)} ${isOnvifBypass ? '(Audio: COPY)' : '(Audio: AAC)'}`);
         const recorderProcess = (0, child_process_1.spawn)('ffmpeg', args);
         recorderProcess.stderr.on('data', (data) => {
             const str = data.toString();
-            if (str.toLowerCase().includes('error') || str.toLowerCase().includes('failed') || str.includes('Connection refused')) {
+            // Jangan disembunyikan jika ada error atau not found dari ffmpeg
+            if (str.toLowerCase().includes('error') ||
+                str.toLowerCase().includes('failed') ||
+                str.includes('Connection refused') ||
+                str.includes('404 Not Found') ||
+                str.includes('Invalid data') ||
+                str.includes('timeout')) {
                 console.error(`[REC FFmpeg ERROR] ${str.trim()}`);
             }
         });
@@ -94,7 +115,8 @@ class RecordingService {
             this.instances.delete(v380Id);
             prisma.camera.findUnique({ where: { v380Id } }).then(cam => {
                 if (cam && cam.isRecording) {
-                    setTimeout(() => this.startRecording(v380Id), 2000);
+                    // Beri jeda agak lama saat restart slice jika crash (5 detik)
+                    setTimeout(() => this.startRecording(v380Id), 5000);
                 }
             });
         });

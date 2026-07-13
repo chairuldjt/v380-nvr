@@ -150,7 +150,7 @@ const toggleRecording = async (req, res) => {
         });
         if (isRecording) {
             if (camera.status === 'online') {
-                recorder_1.recorderService.startRecording(camera.v380Id, camera.rtspPort);
+                recorder_1.recorderService.startRecording(camera.v380Id);
             }
         }
         else {
