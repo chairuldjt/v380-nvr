@@ -20,13 +20,10 @@ cd frontend
 npm run build
 cd ..
 
-echo "[3/3] Menjalankan layanan dengan PM2..."
-# Hentikan dan hapus instance lama jika ada
-pm2 delete v380-nvr-backend 2>/dev/null || true
-pm2 delete v380-nvr-frontend 2>/dev/null || true
-
-# Jalankan dengan ecosystem.config.js
-pm2 start ecosystem.config.js
+echo "[3/3] Menjalankan atau merestart layanan dengan PM2..."
+# Gunakan startOrRestart dengan --update-env agar tidak menghapus process existing
+# dan mencegah ID auto-increment terus menerus setiap kali script dijalankan
+pm2 startOrRestart ecosystem.config.js --update-env
 
 # Simpan konfigurasi PM2 agar otomatis berjalan saat server reboot
 pm2 save
