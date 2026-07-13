@@ -30,7 +30,7 @@ An open-source, highly efficient Network Video Recorder (NVR) built specifically
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/v380-nvr.git
+   git clone https://github.com/chairuldjt/v380-nvr.git
    cd v380-nvr
    ```
 
@@ -53,7 +53,7 @@ An open-source, highly efficient Network Video Recorder (NVR) built specifically
    npm install
    ```
 
-4. **Running the Application**
+4. **Running the Application (Development Mode)**
    For Windows users, simply run the provided batch script from the root directory:
    ```bash
    ./restart.bat
@@ -65,9 +65,27 @@ An open-source, highly efficient Network Video Recorder (NVR) built specifically
 
    The web interface will be accessible at `http://localhost:3000`.
 
+5. **Production Deployment (Linux with PM2)**
+   It is highly recommended to run the NVR using PM2 in a production environment to ensure processes automatically restart if they crash.
+   ```bash
+   # Run the provided PM2 setup script (it will build the frontend and start services)
+   chmod +x start-pm2.sh
+   ./start-pm2.sh
+   ```
+   
+   Helpful PM2 Commands:
+   ```bash
+   pm2 status             # Show running services
+   pm2 logs               # View application logs
+   pm2 restart all        # Restart all services
+   ```
+
 ## ⚙️ Configuration
 
-- **Default Login:** Configure your first user manually in the database or via the initial setup prompt (if implemented).
+- **Default Login:**
+  - Username: `admin`
+  - Password: `admin123`
+  *(Generated automatically if you run `npm run seed` in the backend)*
 - **Storage Folder:** All video recordings are saved locally inside `backend/recordings/`.
 
 ## 📜 License
