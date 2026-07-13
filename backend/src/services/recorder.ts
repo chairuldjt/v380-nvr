@@ -38,13 +38,19 @@ class RecordingService {
   }
 
   private generateFilename(v380Id: string) {
-    const d = new Date();
-    const YYYY = d.getFullYear();
-    const MM = String(d.getMonth() + 1).padStart(2, '0');
-    const DD = String(d.getDate()).padStart(2, '0');
-    const HH = String(d.getHours()).padStart(2, '0');
-    const MIN = String(d.getMinutes()).padStart(2, '0');
-    const SS = String(d.getSeconds()).padStart(2, '0');
+    // Selalu gunakan timezone Asia/Jakarta (WIB) agar nama file konsisten
+    // di server manapun (UTC, WIB, dll) dan cocok dengan filter tanggal di browser user.
+    const now = new Date();
+    // Hitung offset WIB (UTC+7) secara manual — tidak tergantung timezone OS
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    const wib = new Date(utcMs + 7 * 3600000);
+
+    const YYYY = wib.getFullYear();
+    const MM = String(wib.getMonth() + 1).padStart(2, '0');
+    const DD = String(wib.getDate()).padStart(2, '0');
+    const HH = String(wib.getHours()).padStart(2, '0');
+    const MIN = String(wib.getMinutes()).padStart(2, '0');
+    const SS = String(wib.getSeconds()).padStart(2, '0');
     return path.join(RECORDINGS_DIR, `${v380Id}_${YYYY}${MM}${DD}_${HH}${MIN}${SS}.mkv`);
   }
 
