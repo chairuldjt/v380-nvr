@@ -74,6 +74,7 @@ class RecordingService {
     const outputPath = this.generateFilename(v380Id);
     
     const args = [
+      '-fflags', '+genpts+nobuffer', // Jangan ditahan di memori, langsung proses & perbaiki timestamp
       '-rtsp_transport', 'tcp',
       '-timeout', '10000000', // 10 detik socket timeout (microsecond) agar tidak hang selamanya
       '-i', rtspUrl,
@@ -92,7 +93,8 @@ class RecordingService {
     }
 
     args.push(
-      '-f', 'matroska',  
+      '-flush_packets', '1', // Langsung tulis tiap packet ke disk (jangan ditahan di RAM)
+      '-f', 'matroska',
       '-y',
       outputPath
     );
