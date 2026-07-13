@@ -74,9 +74,10 @@ class RecordingService {
     const outputPath = this.generateFilename(v380Id);
     
     const args = [
-      '-rtsp_transport', 'tcp', 
+      '-rtsp_transport', 'tcp',
+      '-timeout', '10000000', // 10 detik socket timeout (microsecond) agar tidak hang selamanya
       '-i', rtspUrl,
-      '-t', '900',       
+      '-t', '900',
       '-c:v', 'copy',
     ];
 
