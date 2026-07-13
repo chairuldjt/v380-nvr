@@ -12,7 +12,7 @@ backend/prisma/dev.db-journal
 # NVR Recordings & Binaries
 backend/recordings/*.mkv
 backend/recordings/*.mp4
-backend/bin/
+# backend/bin/ (removed so we can push decoder binaries)
 
 # Next.js
 frontend/.next/
