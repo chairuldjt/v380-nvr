@@ -34,7 +34,10 @@ export const authenticateToken = (
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      res.status(403).json({ error: 'Invalid or expired token' });
+      // 401 = not authenticated (missing/invalid/expired token)
+      // 403 = authenticated but not authorized (wrong role)
+      // Token expired = user tidak terautentikasi → 401 agar frontend redirect ke /login
+      res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
 
