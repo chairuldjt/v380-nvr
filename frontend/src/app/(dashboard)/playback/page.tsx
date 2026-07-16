@@ -72,6 +72,7 @@ export default function PlaybackPage() {
   const [selectedRecording, setSelectedRecording] = React.useState<string | null>(null);
 
   const videoRef = React.useRef<HTMLVideoElement | null>(null);
+  const pendingSeekRef = React.useRef<number | null>(null);
 
   // Timeline state (0 to 24 hours in seconds = 86400)
   const [timeProgress, setTimeProgress] = React.useState(14 * 3600); // Start at 14:00
@@ -187,8 +188,21 @@ export default function PlaybackPage() {
     const targetSeconds = Array.isArray(val) || typeof val !== 'number' ? (val as readonly number[])[0] : val;
     setTimeProgress(targetSeconds);
 
-    // If seeking inside current clip duration
-    if (videoRef.current && selectedRecording) {
+    // Find which clip contains the target time
+    // ponytail: assumes ~900s per clip; upgrade to real duration from metadata if needed
+    const matchingClip = recordings.find((rec) => {
+      const start = getStartTimeSecondsFromFilename(rec.filename);
+      if (start === null) return false;
+      return targetSeconds >= start && targetSeconds < start + 900;
+    });
+
+    if (matchingClip && matchingClip.filename !== selectedRecording) {
+      // Switch to the clip that contains the seek target
+      setSelectedRecording(matchingClip.filename);
+      // After clip loads, seek to correct offset
+      const start = getStartTimeSecondsFromFilename(matchingClip.filename) ?? 0;
+      pendingSeekRef.current = targetSeconds - start;
+    } else if (videoRef.current && selectedRecording) {
       const offsetInClip = targetSeconds - baseClipStartTime;
       if (offsetInClip >= 0 && (!videoRef.current.duration || offsetInClip <= videoRef.current.duration)) {
         videoRef.current.currentTime = offsetInClip;
@@ -347,10 +361,23 @@ export default function PlaybackPage() {
               onPause={syncPlayState}
               onLoadedMetadata={() => {
                 if (videoRef.current) {
+                   if (pendingSeekRef.current !== null) {
+                     videoRef.current.currentTime = pendingSeekRef.current;
+                     pendingSeekRef.current = null;
+                   }
                    videoRef.current.play().catch(() => setIsPlaying(false));
                 }
               }}
               onTimeUpdate={handleTimeUpdate}
+              onEnded={() => {
+                // Auto-advance to next clip
+                const idx = recordings.findIndex(r => r.filename === selectedRecording);
+                if (idx >= 0 && idx < recordings.length - 1) {
+                  setSelectedRecording(recordings[idx + 1].filename);
+                } else {
+                  setIsPlaying(false);
+                }
+              }}
               className="w-full h-full object-contain"
             />
           ) : (
