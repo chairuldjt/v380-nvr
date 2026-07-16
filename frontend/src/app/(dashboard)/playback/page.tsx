@@ -134,9 +134,11 @@ export default function PlaybackPage() {
       const startTime = getStartTimeSecondsFromFilename(selectedRecording);
       if (startTime !== null) {
         setBaseClipStartTime(startTime);
-        setTimeProgress(startTime);
+        // Only reset slider if not a slider-initiated switch
+        if (pendingSeekRef.current === null) {
+          setTimeProgress(startTime);
+        }
       }
-      setIsPlaying(true); // asumsikan kita ingin autoplay
     }
   }, [selectedRecording]);
 
