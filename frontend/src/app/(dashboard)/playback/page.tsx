@@ -186,7 +186,14 @@ export default function PlaybackPage() {
     }
   };
 
-  const handleSliderSeek = (val: number | readonly number[]) => {
+  // Drag: only update slider visual, no clip switching
+  const handleSliderDrag = (val: number | readonly number[]) => {
+    const targetSeconds = Array.isArray(val) || typeof val !== 'number' ? (val as readonly number[])[0] : val;
+    setTimeProgress(targetSeconds);
+  };
+
+  // Commit: user released slider — now seek/switch clip
+  const handleSliderCommit = (val: number | readonly number[]) => {
     const targetSeconds = Array.isArray(val) || typeof val !== 'number' ? (val as readonly number[])[0] : val;
     setTimeProgress(targetSeconds);
 
@@ -199,9 +206,7 @@ export default function PlaybackPage() {
     });
 
     if (matchingClip && matchingClip.filename !== selectedRecording) {
-      // Switch to the clip that contains the seek target
       setSelectedRecording(matchingClip.filename);
-      // After clip loads, seek to correct offset
       const start = getStartTimeSecondsFromFilename(matchingClip.filename) ?? 0;
       pendingSeekRef.current = targetSeconds - start;
     } else if (videoRef.current && selectedRecording) {
@@ -515,7 +520,8 @@ export default function PlaybackPage() {
                 max={86400}
                 step={1}
                 className="absolute inset-0 h-full [&_[role=slider]]:h-full [&_[role=slider]]:w-0.5 sm:[&_[role=slider]]:w-1 [&_[role=slider]]:rounded-none [&_[role=slider]]:bg-red-500 [&_[role=slider]]:border-none"
-                onValueChange={handleSliderSeek}
+                onValueChange={handleSliderDrag}
+                onValueCommitted={handleSliderCommit}
               />
             </div>
           </div>
