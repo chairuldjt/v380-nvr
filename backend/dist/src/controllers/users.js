@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteUser = exports.updateUser = exports.createUser = exports.getUsers = void 0;
 const client_1 = require("@prisma/client");
-const bcrypt_1 = __importDefault(require("bcrypt"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma = new client_1.PrismaClient();
 const getUsers = async (req, res) => {
     try {
@@ -32,7 +32,7 @@ const createUser = async (req, res) => {
         if (existing) {
             return res.status(400).json({ error: 'Username already exists' });
         }
-        const hashedPassword = await bcrypt_1.default.hash(password, 10);
+        const hashedPassword = await bcryptjs_1.default.hash(password, 10);
         const user = await prisma.user.create({
             data: {
                 username,
@@ -55,7 +55,7 @@ const updateUser = async (req, res) => {
         const { username, password, role } = req.body;
         const updateData = { username, role };
         if (password) {
-            updateData.password = await bcrypt_1.default.hash(password, 10);
+            updateData.password = await bcryptjs_1.default.hash(password, 10);
         }
         const user = await prisma.user.update({
             where: { id },

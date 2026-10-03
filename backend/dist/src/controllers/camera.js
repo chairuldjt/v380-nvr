@@ -149,7 +149,7 @@ const toggleRecording = async (req, res) => {
             data: { isRecording }
         });
         if (isRecording) {
-            if (camera.status === 'online') {
+            if (camera.status === 'online' || camera.hasOnvif) {
                 recorder_1.recorderService.startRecording(camera.v380Id);
             }
         }

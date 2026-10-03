@@ -6,46 +6,66 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.decoderService = void 0;
 const child_process_1 = require("child_process");
 const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const client_1 = require("@prisma/client");
 const recorder_1 = require("./recorder");
 const prisma = new client_1.PrismaClient();
+function getBackendDir() {
+    let cur = __dirname;
+    for (let i = 0; i < 4; i++) {
+        if (fs_1.default.existsSync(path_1.default.join(cur, 'bin')) && (fs_1.default.existsSync(path_1.default.join(cur, 'package.json')) || fs_1.default.existsSync(path_1.default.join(cur, 'prisma')))) {
+            return cur;
+        }
+        cur = path_1.default.dirname(cur);
+    }
+    return path_1.default.join(__dirname, '..');
+}
 class V380DecoderService {
     instances = new Map();
+    intentionalStops = new Set();
+    reconnectTimers = new Map();
     // Resolve binary path based on platform
     binaryPath = process.platform === 'win32'
-        ? path_1.default.join(process.cwd(), 'bin', 'V380Decoder-win.exe')
-        : path_1.default.join(process.cwd(), 'bin', 'V380Decoder-linux');
+        ? path_1.default.join(getBackendDir(), 'bin', 'V380Decoder-win.exe')
+        : path_1.default.join(getBackendDir(), 'bin', 'V380Decoder-linux');
     constructor() {
         this.init();
     }
     async init() {
-        console.log('V380DecoderService initializing...');
+        console.log('[V380Decoder] Service initializing...');
         await this.logEvent('System', 'INFO', 'V380Decoder wrapper service starting');
-        // Automatically start streams for all cameras marked as 'online' or expected to run
-        const cameras = await prisma.camera.findMany();
-        for (const camera of cameras) {
-            // Logic to autostart
-            this.startCameraStream(camera.v380Id);
+        try {
+            const cameras = await prisma.camera.findMany();
+            for (const camera of cameras) {
+                this.startCameraStream(camera.v380Id);
+            }
+        }
+        catch (err) {
+            console.error('[V380Decoder] Failed to load cameras during init:', err.message);
         }
     }
     async startCameraStream(v380Id) {
+        this.intentionalStops.delete(v380Id);
+        const existingTimer = this.reconnectTimers.get(v380Id);
+        if (existingTimer) {
+            clearTimeout(existingTimer);
+            this.reconnectTimers.delete(v380Id);
+        }
         if (this.instances.has(v380Id)) {
-            console.log(`Stream for camera ${v380Id} is already running or attempting to start.`);
+            console.log(`[V380Decoder] Stream for camera ${v380Id} is already running or starting.`);
             return;
         }
         const camera = await prisma.camera.findUnique({ where: { v380Id } });
         if (!camera) {
             throw new Error(`Camera ${v380Id} not found in database.`);
         }
-        console.log(`Starting decoder for camera ${camera.name} (${v380Id})...`);
+        console.log(`[V380Decoder] Starting decoder for camera ${camera.name} (${v380Id})...`);
         await this.logEvent('V380Decoder', 'INFO', `Starting stream for camera ${camera.name}`);
-        // Update status in DB
         await prisma.camera.update({
             where: { v380Id },
-            data: { status: 'starting' }
+            data: { status: 'starting' },
         });
         try {
-            // Sesuaikan argumen dengan dokumentasi V380Decoder v1.0.3
             const args = [
                 '--ip', camera.ip,
                 '--port', camera.port.toString(),
@@ -55,39 +75,33 @@ class V380DecoderService {
                 '--http-port', camera.httpPort.toString(),
                 '--rtsp-port', camera.rtspPort.toString(),
                 '--enable-api',
-                '--enable-mjpeg'
+                '--enable-mjpeg',
             ];
             if (camera.hasOnvif) {
                 args.push('--enable-onvif');
             }
-            // Note: We use a placeholder logic here. If the binary does not exist, it will fail gracefully.
-            // Ensure we run the binary from its own directory so it can find its .so/.dll libraries
             const binDir = path_1.default.dirname(this.binaryPath);
             const decoderProcess = (0, child_process_1.spawn)(this.binaryPath, args, {
                 stdio: 'pipe',
-                cwd: binDir, // Set working directory to bin/ so it finds H264SharpNative
+                cwd: binDir,
                 env: {
                     ...process.env,
-                    // Add binDir to LD_LIBRARY_PATH for Linux to find .so files
-                    LD_LIBRARY_PATH: `${binDir}:${process.env.LD_LIBRARY_PATH || ''}`
-                }
+                    LD_LIBRARY_PATH: `${binDir}:${process.env.LD_LIBRARY_PATH || ''}`,
+                },
             });
             this.instances.set(v380Id, {
                 process: decoderProcess,
                 v380Id,
-                status: 'starting'
+                status: 'starting',
             });
             decoderProcess.stdout.on('data', async (data) => {
                 const output = data.toString();
-                // Fallback: If V380Decoder v1.0.3 doesn't explicitly print 'success', we mark it online if it starts printing stream details or starts the MJPEG server.
-                // Some binaries just print INFO messages without a specific "ready" keyword.
                 if (output.includes('ready') || output.includes('success') || output.includes('INFO') || output.includes('server')) {
                     const instance = this.instances.get(v380Id);
                     if (instance && instance.status !== 'running') {
                         instance.status = 'running';
                         await prisma.camera.update({ where: { v380Id }, data: { status: 'online' } });
                         await this.logEvent('V380Decoder', 'INFO', `Camera ${camera.name} stream is now ONLINE`);
-                        // Start recording automatically if enabled
                         if (camera.isRecording) {
                             recorder_1.recorderService.startRecording(v380Id);
                         }
@@ -96,55 +110,82 @@ class V380DecoderService {
             });
             decoderProcess.stderr.on('data', async (data) => {
                 const errorMsg = data.toString();
-                // Skip logging verbose frame details to console unless debugging
                 if (!errorMsg.includes('[FRAME] unknown type=')) {
                     console.error(`[${v380Id} STDERR]:`, errorMsg);
                 }
-                // V380Decoder v1.0.3 outputs all its main logs (including success logs) to STDERR.
-                // Let's parse it here to detect successful stream start.
                 if (errorMsg.includes('[STREAM] starting stream...') || errorMsg.includes('[MJPEG]') || errorMsg.includes('[STREAM] login OK')) {
                     const instance = this.instances.get(v380Id);
                     if (instance && instance.status !== 'running') {
                         instance.status = 'running';
                         await prisma.camera.update({ where: { v380Id }, data: { status: 'online' } });
                         await this.logEvent('V380Decoder', 'INFO', `Camera ${camera.name} stream is now ONLINE`);
-                        // Start recording automatically if enabled
                         if (camera.isRecording) {
                             recorder_1.recorderService.startRecording(v380Id);
                         }
                     }
                 }
-                // Log critical errors to database
                 if ((errorMsg.toLowerCase().includes('error') || errorMsg.toLowerCase().includes('failed') || errorMsg.toLowerCase().includes('exception')) &&
-                    !errorMsg.includes('unknown type=0x18') // Ignore harmless unknown frame types
-                ) {
+                    !errorMsg.includes('unknown type=0x18')) {
                     await this.logEvent('V380Decoder', 'ERROR', `Error on camera ${camera.name}: ${errorMsg.trim().substring(0, 200)}`);
                 }
             });
             decoderProcess.on('close', async (code) => {
-                console.log(`Decoder for camera ${v380Id} exited with code ${code}`);
+                console.log(`[V380Decoder] Decoder for camera ${v380Id} exited with code ${code}`);
                 this.instances.delete(v380Id);
-                recorder_1.recorderService.stopRecording(v380Id);
                 await prisma.camera.update({ where: { v380Id }, data: { status: 'offline' } });
                 await this.logEvent('V380Decoder', 'WARNING', `Camera ${camera.name} stream closed (Code: ${code})`);
-                // Optional: Implement auto-restart logic here with setTimeout
+                // Auto-reconnect jika bukan manual stop
+                if (!this.intentionalStops.has(v380Id)) {
+                    console.log(`[V380Decoder] Camera ${v380Id} closed unexpectedly. Auto-reconnecting in 5s...`);
+                    const timer = setTimeout(async () => {
+                        this.reconnectTimers.delete(v380Id);
+                        try {
+                            const cam = await prisma.camera.findUnique({ where: { v380Id } });
+                            if (cam && !this.intentionalStops.has(v380Id)) {
+                                this.startCameraStream(v380Id);
+                            }
+                        }
+                        catch (err) {
+                            console.error(`[V380Decoder] Reconnect check failed for ${v380Id}:`, err.message);
+                        }
+                    }, 5000);
+                    this.reconnectTimers.set(v380Id, timer);
+                }
             });
             decoderProcess.on('error', async (err) => {
-                console.error(`Failed to start decoder process for ${v380Id}:`, err.message);
+                console.error(`[V380Decoder] Failed to start decoder process for ${v380Id}:`, err.message);
                 this.instances.delete(v380Id);
-                recorder_1.recorderService.stopRecording(v380Id);
                 await prisma.camera.update({ where: { v380Id }, data: { status: 'error' } });
                 await this.logEvent('System', 'ERROR', `Failed to start decoder binary: ${err.message}`);
+                if (!this.intentionalStops.has(v380Id)) {
+                    const timer = setTimeout(async () => {
+                        this.reconnectTimers.delete(v380Id);
+                        try {
+                            const cam = await prisma.camera.findUnique({ where: { v380Id } });
+                            if (cam && !this.intentionalStops.has(v380Id)) {
+                                this.startCameraStream(v380Id);
+                            }
+                        }
+                        catch (e) { }
+                    }, 5000);
+                    this.reconnectTimers.set(v380Id, timer);
+                }
             });
         }
         catch (error) {
-            console.error(`Exception starting camera ${v380Id}:`, error);
+            console.error(`[V380Decoder] Exception starting camera ${v380Id}:`, error);
         }
     }
     async stopCameraStream(v380Id) {
+        this.intentionalStops.add(v380Id);
+        const timer = this.reconnectTimers.get(v380Id);
+        if (timer) {
+            clearTimeout(timer);
+            this.reconnectTimers.delete(v380Id);
+        }
         const instance = this.instances.get(v380Id);
         if (instance) {
-            console.log(`Stopping decoder for camera ${v380Id}...`);
+            console.log(`[V380Decoder] Stopping decoder for camera ${v380Id}...`);
             instance.process.kill('SIGTERM');
             this.instances.delete(v380Id);
             recorder_1.recorderService.stopRecording(v380Id);
@@ -153,6 +194,21 @@ class V380DecoderService {
             return true;
         }
         return false;
+    }
+    stopAll() {
+        console.log('[V380Decoder] Stopping all decoder instances for shutdown...');
+        for (const [v380Id, timer] of this.reconnectTimers.entries()) {
+            clearTimeout(timer);
+        }
+        this.reconnectTimers.clear();
+        for (const [v380Id, instance] of this.instances.entries()) {
+            this.intentionalStops.add(v380Id);
+            try {
+                instance.process.kill('SIGTERM');
+            }
+            catch (e) { }
+        }
+        this.instances.clear();
     }
     async sendPtzCommand(v380Id, command, speed = 1) {
         const instance = this.instances.get(v380Id);
@@ -192,19 +248,19 @@ class V380DecoderService {
         return this.instances.get(v380Id)?.status || 'stopped';
     }
     getAllInstances() {
-        return Array.from(this.instances.values()).map(inst => ({
+        return Array.from(this.instances.values()).map((inst) => ({
             v380Id: inst.v380Id,
-            status: inst.status
+            status: inst.status,
         }));
     }
     async logEvent(module, level, action, details) {
         try {
             await prisma.systemLog.create({
-                data: { module, level, action, details }
+                data: { module, level, action, details },
             });
         }
         catch (e) {
-            console.error('Failed to write to system log:', e);
+            console.error('[V380Decoder] Failed to write to system log:', e);
         }
     }
 }

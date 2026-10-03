@@ -19,13 +19,23 @@ import { getLogs } from '../controllers/logs';
 import { getRecordings } from '../controllers/playback';
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
+
+function getBackendDir(): string {
+  let cur = __dirname;
+  for (let i = 0; i < 4; i++) {
+    if (fs.existsSync(path.join(cur, 'bin')) && (fs.existsSync(path.join(cur, 'package.json')) || fs.existsSync(path.join(cur, 'prisma')))) {
+      return cur;
+    }
+    cur = path.dirname(cur);
+  }
+  return path.join(__dirname, '..');
+}
 
 const router = Router();
 
 // Serve static recordings directly
-// __dirname selalu relatif terhadap lokasi file ini (routes/),
-// jadi naik 2 level ke root backend/ lalu masuk ke recordings/
-router.use('/recordings/stream', express.static(path.join(__dirname, '..', '..', 'recordings')));
+router.use('/recordings/stream', express.static(path.join(getBackendDir(), 'recordings')));
 
 // Playback endpoints
 router.get('/recordings', getRecordings);

@@ -14,9 +14,20 @@ const logs_1 = require("../controllers/logs");
 const playback_1 = require("../controllers/playback");
 const express_2 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
+function getBackendDir() {
+    let cur = __dirname;
+    for (let i = 0; i < 4; i++) {
+        if (fs_1.default.existsSync(path_1.default.join(cur, 'bin')) && (fs_1.default.existsSync(path_1.default.join(cur, 'package.json')) || fs_1.default.existsSync(path_1.default.join(cur, 'prisma')))) {
+            return cur;
+        }
+        cur = path_1.default.dirname(cur);
+    }
+    return path_1.default.join(__dirname, '..');
+}
 const router = (0, express_1.Router)();
 // Serve static recordings directly
-router.use('/recordings/stream', express_2.default.static(path_1.default.join(process.cwd(), 'recordings')));
+router.use('/recordings/stream', express_2.default.static(path_1.default.join(getBackendDir(), 'recordings')));
 // Playback endpoints
 router.get('/recordings', playback_1.getRecordings);
 // Auth endpoint

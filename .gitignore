@@ -12,7 +12,12 @@ backend/prisma/dev.db-journal
 # NVR Recordings & Binaries
 backend/recordings/*.mkv
 backend/recordings/*.mp4
-# backend/bin/ (removed so we can push decoder binaries)
+# backend/bin/ (keep small decoder binaries, ignore large ffmpeg.exe > 100MB)
+backend/bin/ffmpeg.exe
+
+# Local analysis & Claude handoffs
+.claude/
+analysis_outputs/
 
 # Next.js
 frontend/.next/
@@ -22,3 +27,7 @@ frontend/build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Electron build release
+release/
+backend/dist/index.js

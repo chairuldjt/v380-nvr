@@ -1,0 +1,96 @@
+{
+  "name": "v380-nvr",
+  "version": "1.0.0",
+  "description": "V380 NVR - Native Desktop Network Video Recorder",
+  "main": "electron/main.js",
+  "scripts": {
+    "build:frontend": "cd frontend && NEXT_EXPORT=true npm run build",
+    "build:backend": "cd backend && npx prisma generate && npx esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --external:@prisma/client",
+    "build": "npm run build:frontend && npm run build:backend",
+    "start": "node electron/main.js",
+    "desktop": "electron .",
+    "dist:win:portable": "electron-builder --win portable",
+    "dist:win:installer": "electron-builder --win nsis",
+    "dist:win": "electron-builder --win"
+  },
+  "keywords": [
+    "v380",
+    "nvr",
+    "cctv",
+    "electron",
+    "ffmpeg",
+    "streaming"
+  ],
+  "author": "chairuldjt",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^34.3.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.chairuldjt.v380nvr",
+    "productName": "V380 NVR",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/out/**/*",
+      "backend/dist/**/*",
+      "backend/prisma/**/*",
+      "backend/node_modules/@prisma/**/*",
+      "backend/node_modules/.prisma/**/*",
+      "backend/package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/dist",
+        "to": "backend/dist"
+      },
+      {
+        "from": "backend/bin",
+        "to": "backend/bin",
+        "filter": [
+          "*.exe",
+          "*.dll"
+        ]
+      },
+      {
+        "from": "backend/node_modules/@prisma",
+        "to": "backend/node_modules/@prisma"
+      },
+      {
+        "from": "backend/node_modules/.prisma",
+        "to": "backend/node_modules/.prisma"
+      },
+      {
+        "from": "frontend/out",
+        "to": "frontend/out"
+      },
+      {
+        "from": "backend/prisma/dev.db",
+        "to": "backend/prisma/dev.db"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "frontend/public/favicon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "V380 NVR",
+      "runAfterFinish": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.exe"
+    }
+  }
+}

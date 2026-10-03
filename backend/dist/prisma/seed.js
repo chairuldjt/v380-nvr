@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
-const bcrypt_1 = __importDefault(require("bcrypt"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma = new client_1.PrismaClient();
 const INITIAL_CAMERAS = [
 // Example dummy camera (Remove or edit this before production)
@@ -25,7 +25,7 @@ const INITIAL_CAMERAS = [
 async function main() {
     console.log('Seeding database...');
     // Hash password for admin user
-    const hashedPassword = await bcrypt_1.default.hash('admin123', 10);
+    const hashedPassword = await bcryptjs_1.default.hash('admin123', 10);
     // Seed Admin User
     const admin = await prisma.user.upsert({
         where: { username: 'admin' },

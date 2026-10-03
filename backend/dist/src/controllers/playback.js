@@ -6,7 +6,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRecordings = void 0;
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
-const RECORDINGS_DIR = path_1.default.join(process.cwd(), 'recordings');
+function getBackendDir() {
+    let cur = __dirname;
+    for (let i = 0; i < 4; i++) {
+        if (fs_1.default.existsSync(path_1.default.join(cur, 'bin')) && (fs_1.default.existsSync(path_1.default.join(cur, 'package.json')) || fs_1.default.existsSync(path_1.default.join(cur, 'prisma')))) {
+            return cur;
+        }
+        cur = path_1.default.dirname(cur);
+    }
+    return path_1.default.join(__dirname, '..');
+}
+const RECORDINGS_DIR = path_1.default.join(getBackendDir(), 'recordings');
 // Endpoint to list recording files
 const getRecordings = (req, res) => {
     try {

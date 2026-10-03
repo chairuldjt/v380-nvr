@@ -49,6 +49,7 @@ export default function StorageSettingsPage() {
 
   const [retentionDays, setRetentionDays] = React.useState<number>(7);
   const [maxStorageGB, setMaxStorageGB] = React.useState<number>(500);
+  const [minFreeSpaceGB, setMinFreeSpaceGB] = React.useState<number>(0);
   const [autoDelete, setAutoDelete] = React.useState<boolean>(true);
   const [timezone, setTimezone] = React.useState<string>('Asia/Jakarta');
 
@@ -59,6 +60,7 @@ export default function StorageSettingsPage() {
       const data = await getSystemConfig();
       if (data.retentionDays !== undefined) setRetentionDays(Number(data.retentionDays));
       if (data.maxStorageGB !== undefined) setMaxStorageGB(Number(data.maxStorageGB));
+      if (data.minFreeSpaceGB !== undefined) setMinFreeSpaceGB(Number(data.minFreeSpaceGB));
       if (data.autoDelete !== undefined) setAutoDelete(data.autoDelete === true || data.autoDelete === 'true');
       if (data.timezone) setTimezone(data.timezone);
     } catch (err) {
@@ -80,6 +82,7 @@ export default function StorageSettingsPage() {
       await updateSystemConfig({
         retentionDays,
         maxStorageGB,
+        minFreeSpaceGB,
         autoDelete,
         timezone
       });
@@ -198,6 +201,44 @@ export default function StorageSettingsPage() {
                   <span>500 GB</span>
                   <span>1000 GB (1 TB)</span>
                   <span>2000 GB (2 TB)</span>
+                </div>
+              </div>
+
+              {/* Min Free Space Limit */}
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex justify-between items-baseline">
+                  <div>
+                    <Label className="text-base font-semibold">Minimum Storage Free Space</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Stop and prevent camera recording when disk free space falls below this threshold. Set to 0 to stop only when completely full (0 bytes free).
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="number"
+                      value={minFreeSpaceGB}
+                      onChange={(e) => setMinFreeSpaceGB(Math.max(0, Number(e.target.value)))}
+                      className="w-24 text-right font-mono"
+                    />
+                    <span className="font-bold text-sm">GB</span>
+                  </div>
+                </div>
+                <Slider
+                  value={[minFreeSpaceGB]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={(val) => {
+                    if (Array.isArray(val)) setMinFreeSpaceGB(val[0]);
+                    else if (typeof val === 'number') setMinFreeSpaceGB(val);
+                  }}
+                  className="py-2"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
+                  <span>0 GB (Strict 0)</span>
+                  <span>25 GB</span>
+                  <span>50 GB</span>
+                  <span>100 GB</span>
                 </div>
               </div>
 

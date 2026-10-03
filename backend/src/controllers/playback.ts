@@ -2,10 +2,18 @@ import fs from 'fs';
 import path from 'path';
 import { Request, Response } from 'express';
 
-// __dirname selalu relatif terhadap lokasi file ini (controllers/),
-// jadi naik 2 level ke root backend/ lalu masuk ke recordings/
-// Ini KONSISTEN di dev maupun prod, tidak tergantung dari mana process dijalankan.
-const RECORDINGS_DIR = path.join(__dirname, '..', '..', 'recordings');
+function getBackendDir(): string {
+  let cur = __dirname;
+  for (let i = 0; i < 4; i++) {
+    if (fs.existsSync(path.join(cur, 'bin')) && (fs.existsSync(path.join(cur, 'package.json')) || fs.existsSync(path.join(cur, 'prisma')))) {
+      return cur;
+    }
+    cur = path.dirname(cur);
+  }
+  return path.join(__dirname, '..');
+}
+
+const RECORDINGS_DIR = path.join(getBackendDir(), 'recordings');
 
 // Endpoint to list recording files
 export const getRecordings = (req: Request, res: Response) => {
